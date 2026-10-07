@@ -51,8 +51,20 @@
     var t = e.target;
     return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
   };
-  P.down = function (code) { return this.enabled && !!this.keys[code]; };
-  P.hit = function (code) { return this.enabled && !!this.pressed[code]; };
+  // Mouse buttons are addressable as key codes so gameplay code can use one API.
+  Input.MOUSE = { MouseLeft: 0, MouseMiddle: 1, MouseRight: 2 };
+  P.down = function (code) {
+    if (!this.enabled) return false;
+    var m = Input.MOUSE[code];
+    if (m !== undefined) return (this.mouse.buttons & (1 << m)) !== 0;
+    return !!this.keys[code];
+  };
+  P.hit = function (code) {
+    if (!this.enabled) return false;
+    var m = Input.MOUSE[code];
+    if (m !== undefined) return !!this.mouse.clicked[m];
+    return !!this.pressed[code];
+  };
   P.lock = function () {
     if (this.locked) return;
     try {

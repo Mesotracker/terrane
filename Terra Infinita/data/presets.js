@@ -24,6 +24,7 @@
       weatherQuality: 2,        // 0..3 rain/snow particle density, splashes, puddle detail
       particleQuality: 2,       // 0..3 effect particles (explosions, wood chips, wakes, exhaust)
       physicsQuality: 2,        // 0..3 rigid-body step rate, body budget and activation radius
+      combatDetail: 2,          // 0..3 soldiers alive, settlement density, decal budget, gore
       frameGen: 0,              // frame extrapolation multiplier: 0 off, 1.5, 2, 3, 4
       frameGenQuality: 1,       // 0 fast, 1 balanced, 2 quality (search iterations, hole filling)
       frameGenSensitivity: 1.0, // how far ahead motion is predicted (0.5 … 1.5)
@@ -95,38 +96,38 @@
       resolutionScale: 0.75, renderDistance: 0.7, terrainQuality: 0, lodDistance: 0.8, shadowQuality: 1, textureQuality: 1,
       vegetationQuality: 0, waterQuality: 1, reflectionQuality: 0, ambientOcclusion: 0, bloom: true, volumetrics: 0,
       fogQuality: 1, cloudQuality: 0, pbrQuality: 0, microDetail: 0, antiAliasing: 1, rtx: false, dof: false, motionBlur: false, godRays: false, pathTracing: 0, farShadows: false,
-      weatherQuality: 0, particleQuality: 0, physicsQuality: 1
+      weatherQuality: 0, particleQuality: 0, physicsQuality: 1, combatDetail: 1
     },
     medium: {
       resolutionScale: 0.9, renderDistance: 0.85, terrainQuality: 1, lodDistance: 0.9, shadowQuality: 2, textureQuality: 1,
       vegetationQuality: 1, waterQuality: 1, reflectionQuality: 1, ambientOcclusion: 1, bloom: true, volumetrics: 0,
       fogQuality: 1, cloudQuality: 1, pbrQuality: 1, microDetail: 1, antiAliasing: 3, rtx: false, dof: false, motionBlur: false, godRays: true, pathTracing: 0, farShadows: true,
-      weatherQuality: 1, particleQuality: 1, physicsQuality: 2
+      weatherQuality: 1, particleQuality: 1, physicsQuality: 2, combatDetail: 1
     },
     high: {
       resolutionScale: 1.0, renderDistance: 1.0, terrainQuality: 2, lodDistance: 1.0, shadowQuality: 3, textureQuality: 2,
       vegetationQuality: 2, waterQuality: 2, reflectionQuality: 2, ambientOcclusion: 2, bloom: true, volumetrics: 1,
       fogQuality: 2, cloudQuality: 2, pbrQuality: 2, microDetail: 2, antiAliasing: 3, rtx: false, dof: false, motionBlur: false, godRays: true, pathTracing: 0, farShadows: true,
-      weatherQuality: 2, particleQuality: 2, physicsQuality: 2
+      weatherQuality: 2, particleQuality: 2, physicsQuality: 2, combatDetail: 2
     },
     veryhigh: {
       resolutionScale: 1.0, renderDistance: 1.2, terrainQuality: 3, lodDistance: 1.1, shadowQuality: 4, textureQuality: 2,
       vegetationQuality: 3, waterQuality: 3, reflectionQuality: 2, ambientOcclusion: 2, bloom: true, volumetrics: 2,
       fogQuality: 2, cloudQuality: 3, pbrQuality: 2, microDetail: 2, antiAliasing: 3, rtx: false, dof: false, motionBlur: false, godRays: true, pathTracing: 0, farShadows: true,
-      weatherQuality: 3, particleQuality: 3, physicsQuality: 2
+      weatherQuality: 3, particleQuality: 3, physicsQuality: 2, combatDetail: 3
     },
     ultra: {
       resolutionScale: 1.0, renderDistance: 1.3, terrainQuality: 3, lodDistance: 1.2, shadowQuality: 4, textureQuality: 3,
       vegetationQuality: 3, waterQuality: 3, reflectionQuality: 3, ambientOcclusion: 2, bloom: true, volumetrics: 2,
       fogQuality: 2, cloudQuality: 3, pbrQuality: 2, microDetail: 2, antiAliasing: 3, rtx: true, dof: false, motionBlur: false, godRays: true, pathTracing: 1,
-      weatherQuality: 3, particleQuality: 3, physicsQuality: 3
+      weatherQuality: 3, particleQuality: 3, physicsQuality: 3, combatDetail: 3
     },
     cinematic: {
       resolutionScale: 1.25, renderDistance: 1.5, terrainQuality: 3, lodDistance: 1.4, shadowQuality: 4, textureQuality: 3,
       vegetationQuality: 3, waterQuality: 3, reflectionQuality: 3, ambientOcclusion: 2, bloom: true, volumetrics: 2,
       fogQuality: 2, cloudQuality: 3, pbrQuality: 2, microDetail: 2, antiAliasing: 4, rtx: true, dof: true, motionBlur: true, godRays: true, pathTracing: 4, rtShadows: true,
       vignette: 0.35, filmGrain: 0.035, contrast: 1.08, tonemap: 'agx',
-      weatherQuality: 3, particleQuality: 3, physicsQuality: 3
+      weatherQuality: 3, particleQuality: 3, physicsQuality: 3, combatDetail: 3
     }
   };
 

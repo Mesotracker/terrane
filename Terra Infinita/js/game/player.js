@@ -43,6 +43,31 @@
     this._camera(0, this.engine.settings.controls, this.engine.environment.env);
   };
 
+  /** Ground under a body: the terrain, raised to floors / stairs / roofs where they exist. */
+  P._support = function (x, z, y) {
+    var E = this.engine, h = E.groundHeight(x, z), B = E.buildings;
+    if (B && B.list.length && B.floorHeight) {
+      var f = B.floorHeight(x, z, y + 0.9, 0.62);
+      if (f > h && f > -1e8) h = f;
+    }
+    return h;
+  };
+
+  /** Walls of the settlement generator: push the capsule out, keeping doorways open. */
+  P._collideBuildings = function () {
+    var B = this.engine.buildings;
+    if (!B || !B.list.length || !B.resolveCircle) return;
+    var push = B.resolveCircle(this.pos[0], this.pos[2], this.pos[1], RADIUS, 1.75);
+    if (!push) return;
+    this.pos[0] += push[0]; this.pos[2] += push[1];
+    var pl = Math.hypot(push[0], push[1]);
+    if (pl > 1e-5) {
+      var nx = push[0] / pl, nz = push[1] / pl;
+      var vn = this.vel[0] * nx + this.vel[2] * nz;
+      if (vn < 0) { this.vel[0] -= vn * nx; this.vel[2] -= vn * nz; }   // kill velocity into the wall
+    }
+  };
+
   P._surfaceAt = function (env) {
     var L = this.engine.environment.local;
     var B = TERRA.core.BIOME;
@@ -197,14 +222,15 @@
     var ox = this.pos[0], oz = this.pos[2], oy = this.pos[1];
     this.pos[0] += this.vel[0] * dt; this.pos[1] += this.vel[1] * dt; this.pos[2] += this.vel[2] * dt;
     this._collideObjects();
-    var h = E.groundHeight(this.pos[0], this.pos[2]);
+    this._collideBuildings();
+    var h = this._support(this.pos[0], this.pos[2], this.pos[1]);
     // a ledge higher than a big step blocks you (jump or climb instead of gliding up rock walls)
     if (this.onGround && !this.swimming && !this.climbing && h - oy > 0.55 + Math.max(0, this.vel[1]) * dt) {
       var nx = this.pos[0] - ox, nz = this.pos[2] - oz, nl = Math.hypot(nx, nz) || 1;
       this.pos[0] = ox; this.pos[2] = oz;
       var vin = (this.vel[0] * nx + this.vel[2] * nz) / nl;
       if (vin > 0) { this.vel[0] -= nx / nl * vin; this.vel[2] -= nz / nl * vin; }
-      h = E.groundHeight(ox, oz);
+      h = this._support(ox, oz, oy);
     }
     var wasGround = this.onGround;
     if (this.pos[1] <= h) {
@@ -268,7 +294,7 @@
     if (input.down('KeyC') || input.down('ControlLeft') || input.down('KeyQ')) mv[1] -= 1;
     for (var i = 0; i < 3; i++) this.vel[i] = U.damp(this.vel[i], mv[i] * sp, 6, dt);
     this.pos[0] += this.vel[0] * dt; this.pos[1] += this.vel[1] * dt; this.pos[2] += this.vel[2] * dt;
-    var h = this.engine.groundHeight(this.pos[0], this.pos[2]);
+    var h = this._support(this.pos[0], this.pos[2], this.pos[1]);
     if (this.pos[1] < h + 0.3) { this.pos[1] = h + 0.3; this.vel[1] = Math.max(0, this.vel[1]); }
     this.speed = Math.hypot(this.vel[0], this.vel[2]);
     this.onGround = false; this.swimming = false;

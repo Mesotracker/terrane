@@ -137,6 +137,28 @@
       try { this.effects = new TERRA.game.Effects(this); } catch (e) { U.warn('Effects unavailable', e); this.effects = null; }
       try { this.vehicles = new TERRA.game.Vehicles(this); } catch (e) { U.warn('Vehicles unavailable', e); this.vehicles = null; }
       try { this.tools = new TERRA.game.Tools(this); } catch (e) { U.warn('Tools unavailable', e); this.tools = null; }
+      // combat layer: buildings, soldiers, player weapons and the damage model.
+      // Every part is optional: if one fails the rest of the world keeps running.
+      try {
+        this.combat = new TERRA.game.Combat(this);
+        TERRA.game.Combat.inst = this.combat;
+        this.buildings = new TERRA.world.Buildings(this);
+        this.characters = new TERRA.game.Characters(this);
+        this.soldiers = new TERRA.game.Soldiers(this);
+        this.weapons = new TERRA.game.Weapons(this);
+        this.gvehicles = new TERRA.game.GVehicles(this);
+        this.warmode = new TERRA.game.Warmode(this);
+        this.combat.addProvider(this.buildings.raycast.bind(this.buildings));
+        this.combat.addProvider(this.gvehicles.raycast.bind(this.gvehicles));
+        this.combat.addProvider(this.soldiers.raycast.bind(this.soldiers));
+        this.warmode.init(this.combat);
+        this.buildings.configure(g); this.soldiers.configure(g); this.weapons.configure(g);
+        this.gvehicles.configure(g);
+        this.warmode.configure(g); this.combat.decals.configure(g.combatDetail === undefined ? 2 : g.combatDetail);
+      } catch (e) {
+        U.warn('Combat layer unavailable', e);
+        this.combat = this.buildings = this.soldiers = this.weapons = this.gvehicles = this.warmode = null;
+      }
       this.vegetation.init(this.models, g.vegetationQuality);
       progress('models', 0.52, 'Baking tree impostors');
       await U.tick();
@@ -180,6 +202,11 @@
       if (this.vehicles) this.vehicles.clear();
       if (this.effects) this.effects.clear();
       if (this.tools) this.tools.clear();
+      if (this.combat) this.combat.clear();
+      if (this.buildings) { this.buildings.clear(); }
+      if (this.soldiers) this.soldiers.clear();
+      if (this.weapons) this.weapons.clear();
+      if (this.gvehicles) this.gvehicles.clear();
       this.relics = 0; this.vegetation.collected = {};
       // player & environment
       if (data) {
@@ -190,6 +217,7 @@
         this.relics = Object.keys(this.vegetation.collected).length;
         if (this.vehicles && data.vehicles) this._pendingVehicles = data.vehicles;
         if (this.tools && data.tools) this.tools.deserialize(data.tools);
+        if (data.combat) this._pendingCombat = data.combat;
       } else {
         var sp = this.gen.findSpawn(0, 0);
         this.player.pos = [sp.x, sp.y, sp.z];
@@ -240,6 +268,17 @@
       await U.sleep(250);
       if (this._pendingVehicles && this.vehicles) { try { this.vehicles.deserialize(this._pendingVehicles); } catch (e) { U.warn('Could not restore vehicles', e); } }
       this._pendingVehicles = null;
+      if (this._pendingCombat) {
+        try {
+          var cc = this._pendingCombat;
+          if (this.weapons && cc.weapons) this.weapons.deserialize(cc.weapons);
+          if (this.warmode && cc.warmode) this.warmode.deserialize(cc.warmode);
+          if (this.buildings && cc.buildings) this.buildings.deserialize(cc.buildings);
+          if (this.soldiers && cc.soldiers) this.soldiers.deserialize(cc.soldiers);
+          if (this.gvehicles && cc.gvehicles) this.gvehicles.deserialize(cc.gvehicles);
+        } catch (e) { U.warn('Could not restore combat state', e); }
+      }
+      this._pendingCombat = null;
       this.worldLoaded = true;
       this.state = 'playing';
       this.time = 0;
@@ -281,6 +320,11 @@
       map: this.map.serialize(), collected: this.vegetation.collected, biome: this.environment.local.biomeName,
       vehicles: this.vehicles ? this.vehicles.serialize() : [],
       tools: this.tools ? this.tools.serialize() : null,
+      combat: this.combat ? {
+        weapons: this.weapons.serialize(), warmode: this.warmode.serialize(),
+        buildings: this.buildings.serialize(), soldiers: this.soldiers.serialize(),
+        gvehicles: this.gvehicles ? this.gvehicles.serialize() : []
+      } : null,
       graphics: this.settings.graphics
     };
   };
@@ -311,6 +355,11 @@
     this.renderer.applySettings(g);
     this.chunks.configure(g);
     this.vegetation.configure(g);
+    if (this.buildings) this.buildings.configure(g);
+    if (this.soldiers) this.soldiers.configure(g);
+    if (this.weapons) this.weapons.configure(g);
+    if (this.gvehicles) this.gvehicles.configure(g);
+    if (this.combat) this.combat.decals.configure(g.combatDetail === undefined ? 2 : g.combatDetail);
     this.renderer.dynScale = 1;
   };
   /** Photoreal mode: path tracing + ray-traced soft shadows + every realism setting. Turning it
@@ -382,7 +431,11 @@
     cam.world = w.slice();
     // floating origin: multiples of 8192 m keep float32 precision everywhere
     var ox = Math.round(w[0] / 8192) * 8192, oz = Math.round(w[2] / 8192) * 8192;
-    if (ox !== this.origin[0] || oz !== this.origin[1]) { this.origin = [ox, oz]; this.originKey = ox + ':' + oz; }
+    if (ox !== this.origin[0] || oz !== this.origin[1]) {
+      var dox = this.origin[0] - ox, doz = this.origin[1] - oz;
+      this.origin = [ox, oz]; this.originKey = ox + ':' + oz;
+      if (this.combat) { this.combat.decals.shiftOrigin(dox, doz); this.combat.tracers.clear(); }
+    }
     cam.pos = [w[0] - this.origin[0], w[1], w[2] - this.origin[1]];
     var c = this.canvas;
     cam.aspect = Math.max(0.2, (c.clientWidth || 1) / (c.clientHeight || 1));
@@ -410,6 +463,7 @@
     var pl = this.player;
     var fs = this._fs || (this._fs = { trail: { x: 0, z: 0, size: 64 }, player: {} });
     fs.dt = dt; fs.time = this.time; fs.cam = this.camera; fs.origin = this.origin; fs.originWorld = this.origin; fs.originKey = this.originKey;
+    fs.index = this._frameIndex = (this._frameIndex || 0) + 1;
     fs.env = this.environment.env; fs.settings = this.settings.graphics; fs.chunks = this.chunks;
     fs.player.pos = [pl.pos[0] - this.origin[0], pl.pos[1], pl.pos[2] - this.origin[1]];
     fs.player.worldPos = pl.pos; fs.player.speed = pl.speed;
@@ -433,8 +487,14 @@
   };
   /** Extra G-buffer geometry: vehicles, held tools, effect debris. */
   P._drawExtras = function (shadow, vp) {
+    if (this.buildings) this.buildings.draw(this._fs, shadow, vp);
+    if (this.gvehicles) this.gvehicles.draw(this._fs, shadow, vp);
     if (this.vehicles) this.vehicles.draw(this._fs, shadow, vp);
+    if (this.soldiers) this.soldiers.draw(this._fs, shadow, vp);
     if (this.tools) this.tools.draw(this._fs, shadow, vp);
+    if (!shadow) {
+      if (this.weapons) { this.weapons.draw(this._fs, false); this.weapons.drawGrenades(this._fs); }
+    }
     if (this.effects) this.effects.draw(this._fs, shadow, vp);
   };
 
@@ -473,8 +533,8 @@
     if (inp.hit('KeyL')) { if (!(driving && this.vehicles.toggleLights())) { this.flashlight.on = !this.flashlight.on; this.audio.click(); } }
     if (inp.hit('KeyT')) this.setPhotoreal();
     // physics playground: G throw (Shift = harder, Ctrl = remove all), B change object
-    if (this.throwables && !this.editor.active && !driving && !(this.tools && this.tools.handlesThrow)) {
-      if (inp.hit('KeyG')) {
+    if (this.throwables && !this.editor.active && !driving && !(this.tools && this.tools.handlesThrow) && !(this.weapons && this.weapons.enabled)) {
+      if (inp.hit('KeyG') || inp.hit('KeyY')) {
         if (inp.down('ControlLeft') || inp.down('ControlRight') || inp.down('MetaLeft') || inp.down('MetaRight')) { this.throwables.clear(); TERRA.ui.toast('Removed all thrown objects'); }
         else this.throwables.throwObject(inp.down('ShiftLeft') || inp.down('ShiftRight'));
       }
@@ -559,6 +619,14 @@
     fs.flash = Math.min(0.12, env.lightningFlash * 0.05);
     this.chunks.update(this.camera);
     this.vegetation.update(fs);
+    if (this.combat && active && !this.ui.mapOpen) {
+      if (this.buildings) this.buildings.update(fs);
+      if (this.soldiers) this.soldiers.update(fs);
+      if (this.gvehicles) this.gvehicles.update(fs);
+      if (this.weapons) { this.weapons.update(fs); this.weapons.updateGrenades(fs.dt, fs); }
+      if (this.warmode) this.warmode.update(fs);
+      this.combat.update(fs.dt);
+    }
     this.audio.update(simDt, env, this.environment.local, pl);
     this.map.update();
     // render

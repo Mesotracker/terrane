@@ -74,9 +74,24 @@
   <div id="relicCounter" class="hidden"></div>
   <div id="crosshair"></div>
   <div id="stamina"><div></div></div>
+  <div id="vitals" class="hidden">
+    <div class="vbar hp"><div id="hpFill"></div></div>
+    <div class="vbar ar"><div id="arFill"></div></div>
+    <div class="vnums"><span id="hpNum">100</span><span id="arNum" class="ar">60</span></div>
+  </div>
+  <div id="hudCombat" class="hidden">
+    <div class="whead"><span id="hcName">—</span><span id="hcMode"></span></div>
+    <div class="wammo"><span id="hcMag">30</span><small>/ <span id="hcRes">240</span> <span id="hcMat"></span></small></div>
+    <div class="wreload"><div id="hcReloadFill"></div></div>
+    <div class="wgren"><span id="hcGren">4</span> grenades</div>
+  </div>
+  <div id="hitmarker"></div>
+  <div id="hurtVignette"></div>
+  <div id="damageDir"></div>
+  <div id="deathScreen" class="hidden"><div class="dtitle">KILLED</div><div class="dsub" id="deathSub"></div></div>
   <div id="hints">
     <kbd>W A S D</kbd> move &nbsp; <kbd>Shift</kbd> sprint &nbsp; <kbd>Space</kbd> jump/swim &nbsp; <kbd>C</kbd> crouch &nbsp; <kbd>X</kbd> walk<br>
-    <kbd>V</kbd> camera &nbsp; <kbd>M</kbd> map &nbsp; <kbd>Tab</kbd> editor &nbsp; <kbd>K</kbd> weather &amp; time &nbsp; <kbd>L</kbd> flashlight &nbsp; <kbd>T</kbd> path tracing &nbsp; <kbd>1–6</kbd> tools &nbsp; <kbd>E</kbd> pick up &nbsp; <kbd>N</kbd> vehicles &nbsp; <kbd>F</kbd> enter/exit &nbsp; <kbd>H</kbd> hide UI &nbsp; <kbd>F3</kbd> debug
+    <kbd>V</kbd> camera &nbsp; <kbd>M</kbd> map &nbsp; <kbd>Tab</kbd> editor &nbsp; <kbd>K</kbd> weather &amp; time &nbsp; <kbd>L</kbd> flashlight &nbsp; <kbd>T</kbd> path tracing &nbsp; <kbd>1–6</kbd> tools &nbsp; <kbd>wheel</kbd> weapons &nbsp; <kbd>R</kbd> reload &nbsp; <kbd>RMB</kbd> aim &nbsp; <kbd>G</kbd> grenade &nbsp; <kbd>E</kbd> pick up &nbsp; <kbd>N</kbd> vehicles &nbsp; <kbd>F</kbd> enter/exit &nbsp; <kbd>H</kbd> hide UI &nbsp; <kbd>F3</kbd> debug
   </div>
   <div id="clickToPlay" class="hidden">Click to look around</div>
 </div>
@@ -189,6 +204,7 @@
 <script src="shaders/water.glsl.js"></script>
 <script src="shaders/veg.glsl.js"></script>
 <script src="shaders/particles.glsl.js"></script>
+<script src="shaders/combat.glsl.js"></script>
 <script src="js/gfx/gl.js"></script>
 <script src="js/gfx/texgen.js"></script>
 <script src="js/gfx/sky.js"></script>
@@ -222,6 +238,13 @@
 <script src="js/game/vehicle-models.js"></script>
 <script src="js/game/vehicles.js"></script>
 <script src="js/game/tools.js"></script>
+<script src="js/game/combat-core.js"></script>
+<script src="js/world/buildings.js"></script>
+<script src="js/game/characters.js"></script>
+<script src="js/game/soldiers.js"></script>
+<script src="js/game/weapons.js"></script>
+<script src="js/game/warmode.js"></script>
+<script src="js/game/gvehicles.js"></script>
 <script src="js/game/audio.js"></script>
 <script src="js/game/editor.js"></script>
 <script src="js/game/map.js"></script>

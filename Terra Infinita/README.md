@@ -38,13 +38,17 @@ python3 -m http.server 8080      # then open http://localhost:8080
 | **K** | Weather, time & wind panel |
 | **L** | Flashlight |
 | **T** | Path tracing — photoreal mode on/off |
-| **1 – 6** / mouse wheel | Hands · axe · hoe · rake · stones · dynamite |
+| **1 – 6** | Hands · axe · hoe · rake · stones · dynamite |
+| **Mouse wheel** / **Alt+1–6** | Cycle the seven firearms (rifle, SMG, shotgun, marksman, LMG, pistol, rocket launcher) |
+| **Left mouse** | Fire · with a tool selected: use it / charge a throw |
+| **Right mouse** | Aim down sights (with a weapon) · cancel a throw (with a tool) |
+| **R** | Reload (any weapon) |
+| **G** | Frag grenade (weapons) · throw a test object (physics playground) |
 | **Left mouse** | Use the tool · hold and release to throw (longer hold = harder throw) |
 | **Right mouse** | Cancel a throw / set down what you are holding |
 | **E** | Pick up / drop the object you are looking at (balls, crates, logs, stones …) |
 | **N** | Vehicle menu — **1–7** spawns a skiff, speedboat, cabin cruiser, light aircraft, seaplane, mountain bike or dirt bike in front of you |
 | **F** | Enter / leave the nearest vehicle |
-| **G** | Throw a test object into the world (**Shift** = harder, **Ctrl/⌘+G** = remove all) |
 | **B** | Change the test object: beach ball · mirror ball · wooden crate · barrel · rock |
 | **H** | Hide / show the interface |
 | **F3** or **`** | Debug overlay (stats, LOD, biome/height/moisture/temperature maps …) |
@@ -207,6 +211,56 @@ you are looking). Walk up to a vehicle and press **F**.
 All vehicles have full-detail and reduced meshes (LOD), cast shadows, carry PBR materials
 (paint with clear coat, chrome, glass, rubber, lamps), get wet in rain and spray, write
 motion vectors for frame extrapolation, and sleep when parked or far away.
+
+## Combat — the shooter layer
+
+The explorer grew a battlefield. Nothing about the world changed: the same infinite terrain,
+the same weather, the same 8 km-precision floating origin, no downloads — all combat geometry
+and every soldier is generated procedurally from the world seed. Turn it off with
+**Settings → Graphics → Combat detail → Off** (or set `combatDetail` in `data/presets.js`) and
+you get exactly the peaceful world back; frames keep rendering while it streams.
+
+**Weapons.** Seven firearms, each with its own recoil signature, spread model, magazine, reserve
+and reload timing: AK-pattern rifle, compact SMG, pump shotgun (buckshot pellets), bolt-action
+marksman rifle, belt-fed LMG, service pistol and a shoulder-fired rocket launcher that fires a
+power-4 explosive. Bullets are traced through a material-aware penetration model: a rifle round
+punches through planks and glass, is stopped by brick and concrete, and loses energy with every
+surface it crosses, so shooting through a wall is possible but weak. Impacts spawn the right
+debris per material (brick dust + chips, wood splinters, glass shards, metal sparks, sand
+plumes), a matching sound, a bullet hole decal on the surface and a tracer that is drawn after
+TAA so it stays crisp. Recoil kicks the view model and walks the aim up; shells eject; the
+muzzle flash lights up the street for a frame.
+
+**Soldiers.** Squads live in settlements — garrisons inside houses, patrols on the streets and
+in the ruins — and are streamed with the same deterministic cell grid the buildings use. They
+are skinned characters (19 bones, procedural walk/run/crouch/prone/aim/reload/fire/death
+animation, two-bone IK so the hands actually hold the weapon), textured by the same material
+library as the world, and driven by a state machine with line-of-sight, cover seeking
+(`buildings.coverNear`), suppression, burst fire, reloads, wound states, blood decals and a
+life count that scales with **Combat detail**.
+
+**Vehicles.** Tanks, 8×8 APCs and machine-gun technicals garrison the hostile settlements. They
+patrol, react to gunfire, hunt you with a traverse-limited turret, use lead for moving targets,
+launch smoke screens when badly hurt and can be disabled part by part: shoot the tracks off and
+they are immobilised, hit the engine or fuel and they burn out into a wreck with a popping
+turret, boiling smoke and secondary explosions. The tank's 120 mm gun fires a real shell that
+craters the ground and shakes the camera through the effects system.
+
+**Damage and destruction.** Buildings are hit-zone aware (walls, roofs, floors, timber, brick,
+glass, sandbags) with material armour values, progressive damage that rebuilds the mesh with
+holes and missing parts, structural collapse that drops floors and roofs when supports die,
+fires that spread and burn, scorch marks and bullet-hole decals. Explosions (grenades, rockets,
+tank shells, dynamite, airstrike-scale blasts) apply radial damage with line-of-sight cover,
+throw debris, fell trees, crater the terrain through the height-field edits and chain-detonate
+other explosives.
+
+**How the pieces fit.** `shaders/combat.glsl.js` holds the object, soldier, decal and tracer
+shaders (one shared 26-material library with normal-mapped brick, planks, plaster, concrete,
+glass, cloth camo, kevlar and skin); `js/game/combat-core.js` is the ray caster, damage router,
+impact/explosion/decals/tracers engine; `js/world/buildings.js` generates and destroys the
+settlements; `js/game/characters.js` + `js/game/soldiers.js` build and drive the enemies;
+`js/game/gvehicles.js` the ground vehicles; `js/game/weapons.js` the player's guns;
+`js/game/warmode.js` your health, armour plates, bleeding, regeneration and respawn.
 
 ## Tools, felling and throwing
 

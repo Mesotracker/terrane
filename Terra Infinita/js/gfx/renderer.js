@@ -229,6 +229,8 @@
     if (this.engine.throwables) this.engine.throwables.drawGBuffer(frame);
     if (frame.drawAvatar) frame.drawAvatar(false);
     if (frame.drawExtras) frame.drawExtras(false);
+    // bullet holes, blood and scorch marks are stamped into the G-buffer
+    if (this.engine.combat && this.engine.combat.decals) this.engine.combat.decals.draw(frame, true);
     gl.disable(gl.DEPTH_TEST);
     // occlusion pyramid for next frame's culling
     if (this.hiz) { try { this.hiz.build(frame); } catch (e) { U.warn('occlusion pyramid failed', e); this.hiz = null; } }
@@ -259,6 +261,8 @@
     this.post.taa(frame);          // temporal resolve (particles stay out of the history)
     G.bindFB(T.hdrFB[T.cur], T.w, T.h);
     this.particles.draw(frame);
+    // tracers, muzzle flashes and explosion rings: additive, after TAA so they stay crisp
+    if (this.engine.combat && this.engine.combat.tracers) this.engine.combat.tracers.draw(frame);
     this.post.volumetric(frame);
     this.post.bloom(frame);
     this.post.exposure(frame);

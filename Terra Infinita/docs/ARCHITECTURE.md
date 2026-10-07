@@ -40,6 +40,35 @@ flight, ledge/tree collisions. Meshes are lofted/extruded procedurally with per-
 material ids (two LODs), moving parts posed per frame, drawn with one PBR program (plus
 shadow and motion variants).
 
+## Combat (`js/game/combat-core.js`, `buildings.js`, `characters.js`, `soldiers.js`, `gvehicles.js`, `weapons.js`, `warmode.js`)
+
+`TERRA.game.Combat` is the referee and the only module that owns ray casting. Ray providers
+(buildings, ground vehicles, soldiers, the player capsule) each expose `raycast(o, d, maxT,
+filter)`; `Combat.cast` also marches the analytic terrain, keeps the nearest hit and returns it
+with `{t, type, ref, part, surface, n, p}`. `applyDamage` routes that hit to the right owner,
+`impact` picks the debris/decal/sound from a 26-material table, `explode(pos, power, opts)`
+does radial damage with cover tests, throws debris, fells trees, craters the height field,
+knocks over props and detonates other explosives.
+
+* **Materials** — `CMAT`/`ARMOR` in `combat-core.js` mirror `TERRA.shaders.lib.cmbmat`; each id
+  has armour cost (how much penetration it eats), an albedo/normal layer in the 2D texture
+  arrays and a procedural surface pattern (brick coursing, plank gaps, plaster, concrete form
+  boards, weave, camo) evaluated in the fragment shader.
+* **Buildings** — deterministic sites on a 2600 m cell grid, planned lazily, meshed per
+  settlement (full + far LOD) and rebuilt when parts are destroyed so holes and missing floors
+  are real geometry. Also provides `floorHeight`/`resolveCircle` so the player, soldiers and
+  vehicles walk on the right surface, and `coverNear` for the AI.
+* **Soldiers** — one shared skinned mesh per class, bone matrices uploaded to a `RGBA32F`
+  texture each frame, all instances drawn in a single instanced call per class; AI runs at 4 Hz
+  past 110 m and is culled beyond 320 m.
+* **Ground vehicles** — one template mesh per family, per-vehicle meshes rebuilt on damage,
+  turret traverse/elevation limits, LOS-gated fire, part-specific kills (tracks, wheels,
+  engine, fuel, gun, turret ring).
+* **Frame integration** — `_drawExtras` (G-buffer and shadow cascades) draws buildings,
+  vehicles, soldiers, the view model and effect debris; decals are stamped into the G-buffer
+  right after it; tracers are drawn additively after TAA; the HUD reads `weapons.hud` and
+  `warmode.hud` in `ui._updateCombat`.
+
 ## Tools (`js/game/tools.js`)
 View models are posed in camera space from keyframed animations and drawn into the
 G-buffer with the vehicle program. Hits are resolved by ray casts against trunk cylinders,

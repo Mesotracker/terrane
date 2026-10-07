@@ -248,3 +248,34 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 #toolbar .tb-charge b.lit { background: linear-gradient(90deg, #ff7a3a, #ffd36f); }
 #hints { bottom: 76px; }
 @media (max-width: 700px) { #toolbar .tb-slot { width: 40px; height: 40px; } #toolbar .tb-slot svg { width: 20px; height: 20px; } }
+
+/* ======================= combat HUD ======================= */
+#vitals { position: absolute; left: 18px; bottom: 44px; width: 190px; }
+#vitals .vbar { height: 7px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+#vitals .vbar.hp > div { height: 100%; width: 100%; background: linear-gradient(90deg, #a8332c, #e0736a); transition: width 0.18s; }
+#vitals .vbar.ar > div { height: 100%; width: 100%; background: linear-gradient(90deg, #33608c, #69a4cf); transition: width 0.18s; }
+#vitals .vnums { display: flex; gap: 12px; font-size: 11px; font-family: var(--mono); color: rgba(255, 255, 255, 0.75); text-shadow: 0 1px 2px #000; }
+#vitals .vnums .ar { color: #9fd0f0; }
+#hudCombat { position: absolute; right: 22px; bottom: 34px; text-align: right; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+#hudCombat .whead { font-size: 12px; letter-spacing: 0.14em; color: rgba(255, 255, 255, 0.72); }
+#hudCombat .whead span + span { margin-left: 8px; color: #ffce7a; font-size: 10px; }
+#hudCombat .wammo { font-family: var(--mono); font-size: 34px; line-height: 1.05; color: #fff; }
+#hudCombat .wammo small { font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-left: 4px; }
+#hudCombat .wreload { width: 150px; height: 3px; margin-left: auto; background: rgba(255, 255, 255, 0.16); border-radius: 2px; overflow: hidden; margin-top: 6px; opacity: 0; transition: opacity 0.15s; }
+#hudCombat .wreload > div { height: 100%; width: 0; background: #ffce7a; }
+#hudCombat .wgren { margin-top: 6px; font-size: 11px; color: rgba(255, 255, 255, 0.6); }
+#hitmarker { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; opacity: 0; pointer-events: none; transition: opacity 0.12s, transform 0.12s; }
+#hitmarker::before, #hitmarker::after { content: ''; position: absolute; inset: 0; background:
+  linear-gradient(45deg, transparent 45%, rgba(255, 255, 255, 0.95) 45%, rgba(255, 255, 255, 0.95) 55%, transparent 55%); }
+#hitmarker::after { transform: rotate(90deg); }
+#hitmarker.on { opacity: 1; transform: scale(1.12); }
+#hitmarker.kill::before, #hitmarker.kill::after { background: linear-gradient(45deg, transparent 44%, rgba(255, 90, 70, 0.95) 44%, rgba(255, 90, 70, 0.95) 56%, transparent 56%); }
+#hurtVignette { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  background: radial-gradient(ellipse at center, rgba(120, 0, 0, 0) 40%, rgba(120, 0, 0, 0.62) 100%); }
+#damageDir { position: absolute; left: 50%; top: 50%; width: 240px; height: 240px; margin: -120px 0 0 -120px; opacity: 0; pointer-events: none; }
+#damageDir::before { content: ''; position: absolute; left: 50%; top: 50%; width: 10px; height: 30px; margin: -15px 0 0 -5px;
+  background: linear-gradient(rgba(255, 90, 60, 0), rgba(255, 90, 60, 0.95)); transform-origin: 50% 120px; transform: rotate(var(--dmg, 0deg)); }
+#deathScreen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(24, 2, 2, 0.42); }
+#deathScreen .dtitle { font-size: 34px; letter-spacing: 0.4em; font-weight: 800; color: #e0736a; text-shadow: 0 2px 14px #000; }
+#deathScreen .dsub { margin-top: 10px; font-size: 13px; color: rgba(255, 255, 255, 0.72); }
+body.ads #crosshair { opacity: 0.25; transform: scale(0.55); }

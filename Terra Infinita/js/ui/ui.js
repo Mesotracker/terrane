@@ -253,6 +253,48 @@
     }
     strip.innerHTML = html + '<div id="compassMarks"></div>';
   };
+  /** Combat HUD: vitals, ammo, reload bar, hit marker, hurt vignette, death screen. */
+  P._updateCombat = function (dt) {
+    var E = this.E, w = E.weapons, wm = E.warmode;
+    if (!w || !wm || !E.combat) return;
+    var c = this._hc || (this._hc = {});
+    var txt = function (id, v) { if (c[id] !== v) { c[id] = v; $(id).textContent = v; } };
+    var show = E.state === 'playing';
+    $('hudCombat').classList.toggle('hidden', !show || !this.hudVisible);
+    $('vitals').classList.toggle('hidden', !show || !this.hudVisible);
+    var h = w.hud, vh = wm.hud;
+    if (show) {
+      txt('hcName', h.short); txt('hcMode', h.mode); txt('hcMat', h.mat);
+      txt('hcMag', h.mag);
+      txt('hcRes', h.reserve);
+      txt('hcGren', h.grenades);
+      $('hcMag').style.color = h.mag === 0 ? '#e0736a' : (h.mag <= h.magMax * 0.25 ? '#ffce7a' : '#fff');
+      $('hcReloadFill').style.width = Math.round(U.clamp01(h.reloading) * 100) + '%';
+      $('hudCombat').querySelector('.wreload').style.opacity = h.reloading > 0 ? '1' : '0';
+      txt('hpNum', Math.max(0, Math.round(vh.health)));
+      txt('arNum', Math.max(0, Math.round(vh.armor)));
+      $('hpFill').style.width = Math.max(0, Math.min(100, vh.health)) + '%';
+      $('arFill').style.width = Math.max(0, Math.min(100, vh.armor)) + '%';
+    }
+    var hurt = Math.min(1, vh.hurt);
+    $('hurtVignette').style.opacity = (vh.dead ? 0.9 : hurt * 0.95).toFixed(2);
+    var dirOp = hurt > 0.05 && !vh.dead ? Math.min(0.9, hurt * 1.5) : 0;
+    $('damageDir').style.opacity = dirOp.toFixed(2);
+    if (dirOp) $('damageDir').style.setProperty('--dmg', Math.round(-vh.hurtDir * 180 / Math.PI) + 'deg');
+    var hm = $('hitmarker');
+    hm.classList.toggle('on', !!(h.hitMarker > 0 || h.hitKill > 0));
+    hm.classList.toggle('kill', h.hitKill > 0);
+    $('deathScreen').classList.toggle('hidden', !vh.dead);
+    if (vh.dead) $('deathSub').textContent = 'killed by ' + (wm.killedBy || 'hostile fire') + ' — respawning';
+    document.body.classList.toggle('ads', h.ads > 0.5);
+    if (show) {
+      var ch = $('crosshair');
+      ch.style.transform = 'scale(' + (1 + h.spread * 2.4).toFixed(2) + ')';
+      ch.style.opacity = vh.dead ? '0' : String(0.55 + 0.45 * (1 - Math.min(1, h.spread)));
+    }
+    void dt;
+  };
+
   P._updateCompass = function () {
     var E = this.E, yaw = E.player.yaw;
     // heading: yaw=0 looks toward -z (north); heading grows clockwise
@@ -301,6 +343,7 @@
       $('clickToPlay').classList.toggle('hidden', E.input.locked || E.editor.active || E.state !== 'playing' || this.mapOpen || pl.mode === 'free' && E.input.locked);
     }
     if (this.hudVisible) this._updateCompass();
+    this._updateCombat(dt);
     var perf = E.perf;
     this._fpsT = (this._fpsT || 0) - fs.dt;
     if (this._fpsT <= 0) {

@@ -126,6 +126,10 @@
     syncs.push(select(pg, 'Weather quality', Q4, function () { return g().weatherQuality === undefined ? 2 : g().weatherQuality; }, gset('weatherQuality')));
     syncs.push(select(pg, 'Particle quality', Q4, function () { return g().particleQuality === undefined ? 2 : g().particleQuality; }, gset('particleQuality')));
     syncs.push(select(pg, 'Physics quality', Q4, function () { return g().physicsQuality === undefined ? 2 : g().physicsQuality; }, gset('physicsQuality')));
+    title(pg, 'Combat');
+    syncs.push(select(pg, 'Combat detail', [[0, 'Off (peaceful world)'], [1, 'Light'], [2, 'Standard'], [3, 'Heavy']],
+      function () { return g().combatDetail === undefined ? 2 : g().combatDetail; }, gset('combatDetail')));
+    note(pg, 'Combat detail scales the living battlefield: soldiers alive at once and their garrisons, the number of armoured vehicles patrolling settlements, bullet decals kept on screen, and how hard the enemy AI pushes. Off removes every hostile, vehicle and decal — the world is exactly the peaceful explorer it has always been.');
     syncs.push(select(pg, 'Fog quality', [[0, 'Simple'], [1, 'Height fog'], [2, 'Height + patchy volumetric']], gget('fogQuality'), gset('fogQuality')));
 
     // ---- effects & RTX
