@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terra Infinita — Procedural World Engine</title>
+<meta name="description" content="An infinite, procedurally generated 3D world explorer built on WebGL2. Runs locally from this file.">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<canvas id="view" tabindex="0"></canvas>
+
+<!-- ======================= MAIN MENU ======================= -->
+<div id="mainMenu">
+  <canvas id="menuBackdrop"></canvas>
+  <div class="menu-col">
+    <div class="brand">Procedural World Engine</div>
+    <h1 class="title">TERRA<span>INFINITA</span></h1>
+    <p class="tagline">An endless, physically lit landscape generated from a single seed — mountains, rivers, forests, deserts and weather that never repeat.</p>
+    <div class="seed-row">
+      <input type="text" id="seedInput" spellcheck="false" title="World seed (text or number)">
+      <button class="icon-btn" id="seedRandom" title="Randomize seed">⟳</button>
+      <button class="icon-btn" id="seedCopy" title="Copy seed">⧉</button>
+    </div>
+    <div class="menu-buttons">
+      <button class="menu-btn primary" id="btnPlay">Play <small id="playHint">Generate this seed</small></button>
+      <button class="menu-btn" id="btnContinue">Continue <small id="continueHint">Resume current world</small></button>
+      <button class="menu-btn" id="btnNew">New World <small>Random seed</small></button>
+      <button class="menu-btn" id="btnLoad">Load World <small>Saved slots</small></button>
+      <button class="menu-btn" id="btnWorldSettings">World Settings <small>Generation parameters</small></button>
+      <button class="menu-btn" id="btnSettings">Settings <small>Graphics · Controls · Audio</small></button>
+      <button class="menu-btn" id="btnImport">Import World <small>.terra.json</small></button>
+    </div>
+    <div class="menu-foot">
+      Runs entirely in your browser — no server, no downloads.<br>
+      <kbd>WASD</kbd> move · <kbd>Mouse</kbd> look · <kbd>Esc</kbd> pause · <kbd>Tab</kbd> editor · <kbd>M</kbd> map
+      <div class="gpu-warning hidden" id="gpuWarning"></div>
+    </div>
+  </div>
+  <input type="file" id="importFile" accept=".json,application/json" class="hidden">
+</div>
+
+<!-- ======================= LOADING ======================= -->
+<div id="loading" class="hidden">
+  <div class="load-box">
+    <div class="load-title">TERRA INFINITA</div>
+    <h2 class="load-head">GENERATING WORLD</h2>
+    <div class="load-seed" id="loadSeed">SEED —</div>
+    <div class="bar"><div id="loadBar"></div></div>
+    <ul class="load-steps" id="loadSteps">
+      <li data-step="shaders">Compiling shaders</li>
+      <li data-step="materials">Generating PBR materials</li>
+      <li data-step="models">Growing vegetation models</li>
+      <li data-step="world">Initializing world seed</li>
+      <li data-step="terrain">Streaming terrain chunks</li>
+      <li data-step="environment">Loading environment</li>
+    </ul>
+    <div class="load-detail" id="loadDetail"></div>
+    <div class="load-tip" id="loadTip"></div>
+  </div>
+</div>
+
+<!-- ======================= HUD ======================= -->
+<div id="hud" class="hidden">
+  <div class="hud-info">
+    <div class="loc" id="hudBiome">—</div>
+    <div class="sub" id="hudPlace"></div>
+    <div class="row"><span id="hudTime"></span><span id="hudWeather"></span><span id="hudTemp"></span></div>
+    <div class="row"><span id="hudAlt"></span><span id="hudCoords"></span></div>
+  </div>
+  <div id="compass"><div class="strip" id="compassStrip"></div></div>
+  <div id="fps"></div>
+  <div id="relicCounter" class="hidden"></div>
+  <div id="crosshair"></div>
+  <div id="stamina"><div></div></div>
+  <div id="hints">
+    <kbd>W A S D</kbd> move &nbsp; <kbd>Shift</kbd> sprint &nbsp; <kbd>Space</kbd> jump/swim &nbsp; <kbd>C</kbd> crouch &nbsp; <kbd>X</kbd> walk<br>
+    <kbd>V</kbd> camera &nbsp; <kbd>M</kbd> map &nbsp; <kbd>Tab</kbd> editor &nbsp; <kbd>K</kbd> weather &amp; time &nbsp; <kbd>L</kbd> flashlight &nbsp; <kbd>T</kbd> path tracing &nbsp; <kbd>1–6</kbd> tools &nbsp; <kbd>E</kbd> pick up &nbsp; <kbd>N</kbd> vehicles &nbsp; <kbd>F</kbd> enter/exit &nbsp; <kbd>H</kbd> hide UI &nbsp; <kbd>F3</kbd> debug
+  </div>
+  <div id="clickToPlay" class="hidden">Click to look around</div>
+</div>
+<div id="toasts"></div>
+
+<!-- ======================= PAUSE ======================= -->
+<div id="pauseMenu" class="hidden">
+  <div class="menu-col">
+    <div class="pause-title">PAUSED</div>
+    <div class="menu-buttons">
+      <button class="menu-btn primary" id="pResume">Resume</button>
+      <button class="menu-btn" id="pSave">Save World <small id="pSaveHint">Slot 1</small></button>
+      <button class="menu-btn" id="pLoad">Load World</button>
+      <button class="menu-btn" id="pEnv">Weather &amp; Time <small>K</small></button>
+      <button class="menu-btn" id="pEditor">World Editor <small>Tab</small></button>
+      <button class="menu-btn" id="pMap">World Map <small>M</small></button>
+      <button class="menu-btn" id="pWorld">World Settings</button>
+      <button class="menu-btn" id="pSettings">Settings</button>
+      <button class="menu-btn" id="pExport">Export World <small>JSON</small></button>
+      <button class="menu-btn" id="pShot">Screenshot <small>P</small></button>
+      <button class="menu-btn" id="pMenu">Main Menu</button>
+    </div>
+    <div class="help-grid">
+      <kbd>W A S D</kbd><span>Move</span>
+      <kbd>Shift</kbd><span>Sprint (stamina)</span>
+      <kbd>Space</kbd><span>Jump · swim up · climb steep slopes (hold with W)</span>
+      <kbd>C / Ctrl</kbd><span>Crouch · swim down</span>
+      <kbd>X</kbd><span>Toggle walk / run</span>
+      <kbd>V</kbd><span>First person · third person · free camera</span>
+      <kbd>Tab</kbd><span>World editor (RMB look, LMB paint, [ ] brush)</span>
+      <kbd>M</kbd><span>World map (click to set waypoint)</span>
+      <kbd>K</kbd><span>Weather, time &amp; wind</span>
+      <kbd>L</kbd><span>Flashlight</span>
+      <kbd>T</kbd><span>Path tracing (photoreal mode)</span>
+      <kbd>G</kbd><span>Throw an object (Shift: harder · Ctrl/⌘: remove all)</span>
+      <kbd>B</kbd><span>Change throwable: ball, mirror ball, crate, barrel, rock</span>
+      <kbd>1–6 / wheel</kbd><span>Hands · axe · hoe · rake · stones · dynamite (left mouse to use, hold to throw)</span>
+      <kbd>E</kbd><span>Pick up / drop an object (right mouse: cancel throw)</span>
+      <kbd>N</kbd><span>Vehicle menu: boats, aircraft, bikes (1–7 to spawn)</span>
+      <kbd>F</kbd><span>Enter / leave a vehicle · V camera · R reset · L lights</span>
+      <kbd>H</kbd><span>Hide interface</span>
+      <kbd>F3 / `</kbd><span>Debug overlay</span>
+      <kbd>P</kbd><span>Screenshot</span>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= PANELS ======================= -->
+<div id="settingsPanel" class="panel center-panel hidden">
+  <div class="panel-head"><h3>Settings</h3><button class="x" data-close="settingsPanel">✕</button></div>
+  <div class="tabs" id="settingsTabs">
+    <button class="tab active" data-tab="graphics">Graphics</button>
+    <button class="tab" data-tab="effects">Effects &amp; RTX</button>
+    <button class="tab" data-tab="controls">Controls</button>
+    <button class="tab" data-tab="audio">Audio</button>
+    <button class="tab" data-tab="interface">Interface</button>
+  </div>
+  <div class="panel-body" id="settingsBody"></div>
+</div>
+
+<div id="worldPanel" class="panel center-panel hidden">
+  <div class="panel-head"><h3>World Generation</h3><button class="x" data-close="worldPanel">✕</button></div>
+  <div class="panel-body" id="worldBody"></div>
+</div>
+
+<div id="envPanel" class="panel side-right hidden">
+  <div class="panel-head"><h3>Weather &amp; Time</h3><button class="x" data-close="envPanel">✕</button></div>
+  <div class="panel-body" id="envBody"></div>
+</div>
+
+<div id="editorPanel" class="panel side-left hidden">
+  <div class="panel-head"><h3>World Editor</h3><button class="x" data-close="editorPanel">✕</button></div>
+  <div class="panel-body" id="editorBody"></div>
+</div>
+<div id="editorBanner" class="hidden"><b>EDITOR</b> · Right-drag to look · WASD fly · Left-click to apply · [ ] brush size · Ctrl+Z undo · Tab to exit</div>
+
+<div id="loadPanel" class="panel center-panel hidden">
+  <div class="panel-head"><h3>Saved Worlds</h3><button class="x" data-close="loadPanel">✕</button></div>
+  <div class="panel-body"><div class="slots" id="slotList"></div></div>
+</div>
+
+<div id="mapOverlay" class="hidden">
+  <canvas id="mapCanvas"></canvas>
+  <div class="map-bar">
+    <span class="map-title">WORLD MAP</span>
+    <button class="btn" id="mapCenter">Center on me</button>
+    <button class="btn accent" id="mapTeleport">Travel to waypoint</button>
+    <button class="btn" id="mapClearWp">Clear waypoint</button>
+    <button class="btn" id="mapClose">Close (M)</button>
+  </div>
+  <div class="map-legend" id="mapLegend"></div>
+  <div class="map-info" id="mapInfo"></div>
+</div>
+
+<div id="debugOverlay" class="hidden"></div>
+
+<!-- ======================= SCRIPTS (classic scripts: works from file://) ======================= -->
+<script src="js/core/namespace.js"></script>
+<script src="js/core/math.js"></script>
+<script src="data/presets.js"></script>
+<script src="data/textures.js"></script>
+<script src="js/world/terrain-core.js"></script>
+<script src="shaders/lib.glsl.js"></script>
+<script src="shaders/texgen.glsl.js"></script>
+<script src="shaders/terrain.glsl.js"></script>
+<script src="shaders/sky.glsl.js"></script>
+<script src="shaders/post.glsl.js"></script>
+<script src="shaders/pt.glsl.js"></script>
+<script src="shaders/farfield.glsl.js"></script>
+<script src="shaders/water.glsl.js"></script>
+<script src="shaders/veg.glsl.js"></script>
+<script src="shaders/particles.glsl.js"></script>
+<script src="js/gfx/gl.js"></script>
+<script src="js/gfx/texgen.js"></script>
+<script src="js/gfx/sky.js"></script>
+<script src="js/gfx/shadows.js"></script>
+<script src="js/gfx/terrain-renderer.js"></script>
+<script src="js/gfx/postfx.js"></script>
+<script src="js/gfx/pathtracer.js"></script>
+<script src="js/gfx/farfield.js"></script>
+<script src="js/gfx/hiz.js"></script>
+<script src="js/gfx/framegen.js"></script>
+<script src="js/gfx/probe.js"></script>
+<script src="js/gfx/renderer.js"></script>
+<script src="js/world/worker-pool.js"></script>
+<script src="js/world/edits.js"></script>
+<script src="js/world/chunk-manager.js"></script>
+<script src="js/world/models.js"></script>
+<script src="js/world/vegetation.js"></script>
+<script src="js/world/water.js"></script>
+<script src="js/world/watersim.js"></script>
+<script src="js/env/time.js"></script>
+<script src="js/env/weather.js"></script>
+<script src="js/env/environment.js"></script>
+<script src="js/env/particles.js"></script>
+<script src="js/env/windsim.js"></script>
+<script src="js/game/input.js"></script>
+<script src="js/game/player.js"></script>
+<script src="js/game/interaction.js"></script>
+<script src="js/game/throwables.js"></script>
+<script src="js/game/surfaces.js"></script>
+<script src="js/game/effects.js"></script>
+<script src="js/game/vehicle-models.js"></script>
+<script src="js/game/vehicles.js"></script>
+<script src="js/game/tools.js"></script>
+<script src="js/game/audio.js"></script>
+<script src="js/game/editor.js"></script>
+<script src="js/game/map.js"></script>
+<script src="js/game/save.js"></script>
+<script src="js/game/perf.js"></script>
+<script src="js/ui/ui.js"></script>
+<script src="js/ui/panels.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
